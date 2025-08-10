@@ -30,6 +30,7 @@ import {
 } from '../lib/Tic-tac-toe';
 import { useAsyncStorageState } from '../hooks/use-asynsc';
 import { Sun, SunMoon } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Difficulty = 'easy' | 'unbeatable';
 
@@ -106,6 +107,7 @@ export default function Main() {
     finishedOnce.current = true;
 
     if (result.winner) {
+        setConfetti(true);
       setStats(s => ({
         ...s,
         [result.winner as 'X' | 'O']: s[result.winner as 'X' | 'O'] + 1,
@@ -114,7 +116,6 @@ export default function Main() {
         `🎉 Game Over Player ${result.winner} wins!`,
         ToastAndroid.SHORT,
       );
-      setConfetti(true);
       setTimeout(() => setConfetti(false), 10000);
     } else if (isDraw) {
       setStats(s => ({ ...s, draws: s.draws + 1 }));
@@ -213,7 +214,20 @@ export default function Main() {
       : 'Draw'
     : `Turn: ${gameState.currentPlayer}`;
 
-  const isDark = colorScheme === 'dark';
+  const [isDark,setIsDark] = useState(true);
+  const switchTheme =async()=>{
+    await AsyncStorage.setItem('theme',isDark?'dark':'light');
+  }
+  useEffect(()=>{
+    const setTheme=async()=>{
+        const theme = await  AsyncStorage.getItem('theme')
+        if(theme=='dark')
+            setIsDark(true)
+        else
+            setIsDark(false)
+    }
+    setTheme()
+  },[])
 
   return (
     <SafeAreaView className={`flex-1 ${isDark ? 'bg-neutral-900' : 'bg-gray-100'}`}>
@@ -232,7 +246,7 @@ export default function Main() {
             Tic Tac Toe
           </Text>
         </View>
-
+{/* <Sun color={'#000'}/> */}
         {/* Game Settings */}
         <View className="mb-5">
           {/* Statistics */}
@@ -344,6 +358,14 @@ export default function Main() {
           <Text className={`text-xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-800'}`}>
             Settings
           </Text>
+             <View className="flex-row items-center justify-between mb-3">
+            <Text className={`text-base font-semibold ${
+              isDark ? 'text-gray-200' : 'text-gray-600'
+            }`}>
+              {isDark?'Dark':'Light'}
+            </Text>
+            <Switch value={isDark} onValueChange={switchTheme} />
+          </View>
           
           <View className="flex-row items-center justify-between mb-3">
             <Text className={`text-base font-semibold ${
@@ -372,7 +394,7 @@ export default function Main() {
                     <Pressable
                       key={symbol}
                       onPress={() => setHumanPlaysAs(symbol)}
-                      disabled={!gameState.finished}
+                    //   disabled={!gameState.finished}
                       className={`flex-1 items-center py-2 ${
                         active 
                           ? isDark 
