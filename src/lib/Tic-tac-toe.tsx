@@ -47,22 +47,33 @@ export function bestMove(
     return avail[r];
   }
 
-  // Unbeatable (minimax with depth bias)
+  // Unbeatable (minimax with alpha-beta pruning)
   let bestScore = Number.NEGATIVE_INFINITY;
   let move: number | null = null;
+  let alpha = Number.NEGATIVE_INFINITY;
+  const beta = Number.POSITIVE_INFINITY;
+  
   for (const idx of avail) {
     const next = [...board];
     next[idx] = ai;
-    const score = minimax(next, toggle(ai), ai, 0);
+    const score = minimax(next, toggle(ai), ai, 0, alpha, beta);
     if (score > bestScore) {
       bestScore = score;
       move = idx;
     }
+    alpha = Math.max(alpha, score);
   }
   return move;
 }
 
-function minimax(board: Board, player: Exclude<Cell, null>, ai: Exclude<Cell, null>, depth: number): number {
+function minimax(
+  board: Board,
+  player: Exclude<Cell, null>,
+  ai: Exclude<Cell, null>,
+  depth: number,
+  alpha: number,
+  beta: number
+): number {
   const { winner } = getWinner(board);
   if (winner) {
     // Prefer faster wins and slower losses
@@ -77,8 +88,10 @@ function minimax(board: Board, player: Exclude<Cell, null>, ai: Exclude<Cell, nu
     for (const idx of moves) {
       const next = [...board];
       next[idx] = player;
-      const score = minimax(next, toggle(player), ai, depth + 1);
+      const score = minimax(next, toggle(player), ai, depth + 1, alpha, beta);
       best = Math.max(best, score);
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break; // Beta cutoff
     }
     return best;
   } else {
@@ -86,8 +99,10 @@ function minimax(board: Board, player: Exclude<Cell, null>, ai: Exclude<Cell, nu
     for (const idx of moves) {
       const next = [...board];
       next[idx] = player;
-      const score = minimax(next, toggle(player), ai, depth + 1);
+      const score = minimax(next, toggle(player), ai, depth + 1, alpha, beta);
       best = Math.min(best, score);
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break; // Alpha cutoff
     }
     return best;
   }
